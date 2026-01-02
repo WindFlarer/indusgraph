@@ -15,6 +15,18 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPalette, QColor, QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal, QSize, QEvent
 
+# --- 常量定义 ---
+RESOLUTION_LIST = [
+    "SDXL_768x1344", "SDXL_768x1280", "SDXL_832x1216", "SDXL_832x1152",
+    "SDXL_896x1152", "SDXL_896x1008", "SDXL_960x1088", "SDXL_960x1024",
+    "SDXL_1024x1024", "SDXL_1024x960", "SDXL_1088x960", "SDXL_1088x896",
+    "SDXL_1152x896", "SDXL_1152x832", "SDXL_1216x832", "SDXL_1280x768",
+    "SDXL_1344x768", 
+    "2K_1024x1536", "2K_1536x1536", "2K_1536x1024"
+]
+
+DEFAULT_RESOLUTION = "832x1216"
+
 # --- 辅助函数：生成圆圈数字 ---
 def get_circled_num(n):
     if 1 <= n <= 20: return chr(9311 + n)
@@ -36,195 +48,97 @@ DEFAULT_MIN_C = 3
 REPEAT_MIN = 3             
 REPEAT_MAX = 5             
 
-# --- [需求2 & 3] 现代 UI 主题设置 ---
-
+# --- UI 主题设置 ---
 def set_light_theme(app: QApplication):
     app.setStyle("Fusion")
-    
-    # 浅色模式调色板
     palette = QPalette()
-    palette.setColor(QPalette.Window, QColor(245, 247, 250))       # 背景：极淡的灰蓝白
-    palette.setColor(QPalette.WindowText, QColor(48, 49, 51))      # 文字：深灰
-    palette.setColor(QPalette.Base, QColor(255, 255, 255))         # 输入框背景：纯白
+    palette.setColor(QPalette.Window, QColor(245, 247, 250))
+    palette.setColor(QPalette.WindowText, QColor(48, 49, 51))
+    palette.setColor(QPalette.Base, QColor(255, 255, 255))
     palette.setColor(QPalette.AlternateBase, QColor(250, 250, 250))
     palette.setColor(QPalette.Text, QColor(48, 49, 51))
     palette.setColor(QPalette.Button, QColor(255, 255, 255))       
     palette.setColor(QPalette.ButtonText, QColor(96, 98, 102))
-    palette.setColor(QPalette.Highlight, QColor(64, 158, 255))     # 强调色：现代蓝
+    palette.setColor(QPalette.Highlight, QColor(64, 158, 255))
     palette.setColor(QPalette.HighlightedText, Qt.white)
     app.setPalette(palette)
 
-    # 全局 QSS
     qss = """
-    QWidget {
-        font-family: "Calibri", "SimHei"; 
-        font-size: 10pt;
+    QWidget { font-family: "Calibri", "SimHei"; font-size: 10pt; }
+    
+    QFrame#CardFrame { 
+        background-color: #FFFFFF; 
+        border: 1px solid #EBEEF5; 
+        border-radius: 8px; 
     }
     
-    /* 现代卡片风格 Frame */
-    QFrame#CardFrame {
-        background-color: #FFFFFF;
-        border: 1px solid #EBEEF5;
-        border-radius: 8px;
-    }
-    
-    /* 主按钮 */
-    QPushButton {
-        background-color: #FFFFFF;
-        border: 1px solid #DCDFE6;
-        border-radius: 6px;
-        padding: 6px 12px;
-        color: #606266;
-    }
-    QPushButton:hover {
-        color: #409EFF;
-        border-color: #C6E2FF;
-        background-color: #ECF5FF;
-    }
-    QPushButton:pressed {
-        color: #3A8EE6;
-        border-color: #3A8EE6;
-        background-color: #E6F1FC;
-    }
-    QPushButton:checked {
-        color: #FFFFFF;
-        background-color: #409EFF;
-        border-color: #409EFF;
-    }
-
-    /* 胶囊/标签风格按钮 (用于选择窗口) */
-    QPushButton#TagButton {
-        background-color: #F4F4F5;
-        border: 1px solid #E9E9EB;
-        border-radius: 15px; /* 圆润 */
-        color: #909399;
-        padding: 5px 15px;
+    QLabel#CategoryTitle {
+        font-family: "SimHei";
+        font-size: 11pt;
         font-weight: bold;
-        text-align: center;
-    }
-    QPushButton#TagButton:hover {
-        background-color: #E6F1FC;
-        color: #409EFF;
-        border-color: #C6E2FF;
-    }
-    QPushButton#TagButton:checked {
-        background-color: #409EFF;
-        color: #FFFFFF;
-        border-color: #409EFF;
+        color: #303133; 
     }
     
-    /* 输入框和列表 */
-    QTextEdit, QListWidget, QTableWidget {
-        border: 1px solid #DCDFE6;
-        border-radius: 6px;
-        background-color: #FFFFFF;
-        padding: 5px;
-    }
-    
-    QTableWidget::item:selected {
-        background-color: #ECF5FF;
-        color: #409EFF;
-    }
-
-    QScrollBar:vertical {
-        border: none;
-        background: transparent;
-        width: 8px;
-        margin: 0px;
-    }
-    QScrollBar::handle:vertical {
-        background: #C0C4CC;
-        min-height: 20px;
-        border-radius: 4px;
-    }
+    QPushButton { background-color: #FFFFFF; border: 1px solid #DCDFE6; border-radius: 6px; padding: 6px 12px; color: #606266; }
+    QPushButton:hover { color: #409EFF; border-color: #C6E2FF; background-color: #ECF5FF; }
+    QPushButton:pressed { color: #3A8EE6; border-color: #3A8EE6; background-color: #E6F1FC; }
+    QPushButton:checked { color: #FFFFFF; background-color: #409EFF; border-color: #409EFF; }
+    QPushButton#TagButton { background-color: #F4F4F5; border: 1px solid #E9E9EB; border-radius: 15px; color: #909399; padding: 5px 15px; font-weight: bold; text-align: center; }
+    QPushButton#TagButton:hover { background-color: #E6F1FC; color: #409EFF; border-color: #C6E2FF; }
+    QPushButton#TagButton:checked { background-color: #409EFF; color: #FFFFFF; border-color: #409EFF; }
+    QTextEdit, QListWidget, QTableWidget { border: 1px solid #DCDFE6; border-radius: 6px; background-color: #FFFFFF; padding: 5px; }
+    QTableWidget::item:selected { background-color: #ECF5FF; color: #409EFF; }
+    QScrollBar:vertical { border: none; background: transparent; width: 8px; margin: 0px; }
+    QScrollBar::handle:vertical { background: #C0C4CC; min-height: 20px; border-radius: 4px; }
     QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
     """
     app.setStyleSheet(qss)
 
 def set_dark_theme(app: QApplication):
     app.setStyle("Fusion")
-    
-    # [需求3] 优化夜间模式配色 (Modern Dark)
     palette = QPalette()
-    palette.setColor(QPalette.Window, QColor(32, 33, 36))          # 背景：深炭色 (Google Dark)
-    palette.setColor(QPalette.WindowText, QColor(224, 224, 224))   # 文字：灰白，不刺眼
-    palette.setColor(QPalette.Base, QColor(45, 45, 48))            # 输入框：稍亮
+    palette.setColor(QPalette.Window, QColor(32, 33, 36))
+    palette.setColor(QPalette.WindowText, QColor(224, 224, 224))
+    palette.setColor(QPalette.Base, QColor(45, 45, 48))
     palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
     palette.setColor(QPalette.Text, QColor(224, 224, 224))
     palette.setColor(QPalette.Button, QColor(45, 45, 48))
     palette.setColor(QPalette.ButtonText, QColor(224, 224, 224))
-    palette.setColor(QPalette.Highlight, QColor(64, 158, 255))     # 保持蓝色高亮
+    palette.setColor(QPalette.Highlight, QColor(64, 158, 255))
     palette.setColor(QPalette.HighlightedText, Qt.white)
     palette.setColor(QPalette.Link, QColor(100, 181, 246))
     app.setPalette(palette)
     
     qss = """
-    QWidget {
-        font-family: "Calibri", "SimHei";
-        font-size: 10pt;
+    QWidget { font-family: "Calibri", "SimHei"; font-size: 10pt; }
+    
+    QFrame#CardFrame { 
+        background-color: #2D2D30; 
+        border: 1px solid #3E3E42; 
+        border-radius: 8px; 
     }
     
-    QFrame#CardFrame {
-        background-color: #2D2D30; /* 卡片背景 */
-        border: 1px solid #3E3E42;
-        border-radius: 8px;
-    }
-    
-    QPushButton {
-        background-color: #363636;
-        border: 1px solid #4F4F4F;
-        border-radius: 6px;
-        padding: 6px 12px;
-        color: #E0E0E0;
-    }
-    QPushButton:hover {
-        background-color: #404040;
-        border-color: #606060;
-    }
-    QPushButton:checked {
-        background-color: #1e4f7a; /* 深蓝选中态 */
-        border-color: #409EFF;
-        color: #FFFFFF;
-    }
-
-    /* 夜间模式 Tag 按钮 */
-    QPushButton#TagButton {
-        background-color: #2D2D30;
-        border: 1px solid #3E3E42;
-        border-radius: 15px;
-        color: #A0A0A0;
-    }
-    QPushButton#TagButton:hover {
-        background-color: #3E3E42;
-        color: #FFFFFF;
-    }
-    QPushButton#TagButton:checked {
-        background-color: #164c7e;
-        border-color: #409EFF;
+    QLabel#CategoryTitle {
+        font-family: "SimHei";
+        font-size: 11pt;
+        font-weight: bold;
         color: #FFFFFF;
     }
     
-    QTextEdit, QListWidget, QTableWidget {
-        border: 1px solid #3E3E42;
-        background-color: #252526; /* 编辑器深色背景 */
-        color: #E0E0E0;
-    }
-    
-    QTableWidget::item:selected {
-        background-color: #1e3a5f;
-    }
-    
-    QScrollBar::handle:vertical {
-        background: #555555;
-    }
+    QPushButton { background-color: #363636; border: 1px solid #4F4F4F; border-radius: 6px; padding: 6px 12px; color: #E0E0E0; }
+    QPushButton:hover { background-color: #404040; border-color: #606060; }
+    QPushButton:checked { background-color: #1e4f7a; border-color: #409EFF; color: #FFFFFF; }
+    QPushButton#TagButton { background-color: #2D2D30; border: 1px solid #3E3E42; border-radius: 15px; color: #A0A0A0; }
+    QPushButton#TagButton:hover { background-color: #3E3E42; color: #FFFFFF; }
+    QPushButton#TagButton:checked { background-color: #164c7e; border-color: #409EFF; color: #FFFFFF; }
+    QTextEdit, QListWidget, QTableWidget { border: 1px solid #3E3E42; background-color: #252526; color: #E0E0E0; }
+    QTableWidget::item:selected { background-color: #1e3a5f; }
+    QScrollBar::handle:vertical { background: #555555; }
     """
     app.setStyleSheet(qss)
 
 # --- 自定义组件 ---
 class TruncatedCheckBox(QWidget):
-    """
-    使用 QCheckBox + QLabel 组合，以支持 HTML 渲染
-    """
     def __init__(self, full_code, translation, parent=None):
         super().__init__(parent)
         self.full_code = full_code
@@ -232,7 +146,7 @@ class TruncatedCheckBox(QWidget):
         
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8) # 稍微增加间距
+        layout.setSpacing(8)
         
         self.checkbox = QCheckBox()
         self.checkbox.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -240,13 +154,12 @@ class TruncatedCheckBox(QWidget):
         self.label = QLabel()
         self.label.setTextFormat(Qt.RichText) 
         self.label.setCursor(QCursor(Qt.PointingHandCursor))
-        self.label.setStyleSheet("border: none; background: transparent;") # 确保标签透明
+        self.label.setStyleSheet("border: none; background: transparent;")
         
         display_code = full_code
         if len(display_code) > 25: 
             display_code = display_code[:23] + "..."
             
-        # 使用 css class 或默认颜色，不在 html 中硬编码颜色，以便适配夜间模式
         label_text = f"<b>{display_code}</b>"
         if translation:
             label_text += f" <span style='font-weight:normal; opacity: 0.7;'>({translation})</span>"
@@ -270,29 +183,17 @@ class TruncatedCheckBox(QWidget):
         dialog = QDialog(self)
         dialog.setWindowTitle("完整内容查看")
         dialog.resize(400, 300)
-        # [需求2] 美化双击查看窗口
         layout = QVBoxLayout(dialog)
         layout.setContentsMargins(20, 20, 20, 20)
-        
-        info = QLabel(f"<b>动作代码:</b>")
-        info.setStyleSheet("font-size: 14px; margin-bottom: 5px;")
+        info = QLabel(f"<b>动作代码:</b>"); info.setStyleSheet("font-size: 14px; margin-bottom: 5px;")
         layout.addWidget(info)
-        
-        content = QTextEdit()
-        content.setPlainText(self.full_code)
-        content.setReadOnly(True)
+        content = QTextEdit(); content.setPlainText(self.full_code); content.setReadOnly(True)
         content.setStyleSheet("font-size: 13px; color: #409EFF;")
         layout.addWidget(content)
-        
         trans_lbl = QLabel(f"<b>翻译:</b> {self.translation}" if self.translation else "<b>翻译:</b> 无")
-        trans_lbl.setStyleSheet("margin-top: 10px; font-size: 13px;")
-        trans_lbl.setWordWrap(True)
+        trans_lbl.setStyleSheet("margin-top: 10px; font-size: 13px;"); trans_lbl.setWordWrap(True)
         layout.addWidget(trans_lbl)
-        
-        btn = QPushButton("关闭")
-        btn.clicked.connect(dialog.accept)
-        layout.addWidget(btn)
-        
+        btn = QPushButton("关闭"); btn.clicked.connect(dialog.accept); layout.addWidget(btn)
         dialog.exec_()
 
     def on_state_changed(self, state): pass 
@@ -356,7 +257,6 @@ class MainWindow(QMainWindow):
     def save_config(self):
         config_path = os.path.join(self.base_dir, "config.json")
         last_export = self.config_data.get("last_export_dir", "")
-        
         data = {
             "excel_path": self.current_excel_path if self.current_excel_path else "",
             "mapping": self.col_mapping,
@@ -365,10 +265,7 @@ class MainWindow(QMainWindow):
         try:
             with open(config_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4, ensure_ascii=False)
-        except PermissionError:
-            QMessageBox.warning(self, "配置保存失败", f"无法写入配置文件:\n{config_path}\n请检查权限或文件是否被占用。")
-        except Exception as e:
-            print(f"保存配置失败: {e}")
+        except Exception as e: print(f"保存配置失败: {e}")
 
     def parse_config_setting(self, cat_name):
         setting = self.col_mapping.get(cat_name)
@@ -404,13 +301,13 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(top_bar)
 
         splitter = QSplitter(Qt.Horizontal)
-        splitter.setHandleWidth(2) # 细分割线
+        splitter.setHandleWidth(2)
         main_layout.addWidget(splitter)
 
         # --- 左侧面板 ---
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
-        left_layout.setContentsMargins(0, 0, 10, 0) # 右侧留点空隙
+        left_layout.setContentsMargins(0, 0, 10, 0)
         
         file_layout = QHBoxLayout()
         self.file_label = QLabel("等待加载...")
@@ -434,7 +331,6 @@ class MainWindow(QMainWindow):
         btn_reset.clicked.connect(self.reset_all_actions)
         btn_gen = QPushButton("生成 Prompt")
         btn_gen.clicked.connect(self.generate_plan)
-        # [需求2] 按钮高亮样式
         btn_gen.setStyleSheet("background-color: #409EFF; color: white; border-color: #409EFF; font-weight: bold;")
         
         btn_export = QPushButton("导出 Excel")
@@ -453,8 +349,7 @@ class MainWindow(QMainWindow):
         self.cats_container_widget = QWidget()
         self.cats_layout = QVBoxLayout(self.cats_container_widget)
         self.cats_layout.setAlignment(Qt.AlignTop)
-        # [需求1] 增加左侧间距，确保内容不贴边
-        self.cats_layout.setContentsMargins(5, 5, 5, 5)
+        self.cats_layout.setContentsMargins(5, 5, 10, 5)
         self.cats_layout.setSpacing(15) 
         
         scroll.setWidget(self.cats_container_widget)
@@ -468,7 +363,7 @@ class MainWindow(QMainWindow):
         # --- 右侧面板 ---
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
-        right_layout.setContentsMargins(10, 0, 0, 0) # 左侧留点空隙
+        right_layout.setContentsMargins(10, 0, 0, 0)
 
         tool_bar = QHBoxLayout()
         
@@ -498,9 +393,12 @@ class MainWindow(QMainWindow):
         
         btn_tag = QPushButton("添加 Tag")
         btn_tag.clicked.connect(self.add_extra_prompt)
+        
+        btn_img_size = QPushButton("图像大小")
+        btn_img_size.clicked.connect(self.set_image_size)
+
         btn_aux = QPushButton("添加辅助/表情")
         btn_aux.clicked.connect(self.open_add_action_window)
-        # 按钮样式微调
         btn_aux.setStyleSheet("font-weight: bold;")
 
         tool_bar.addWidget(btn_all)
@@ -515,6 +413,7 @@ class MainWindow(QMainWindow):
         tool_bar.addWidget(btn_del)
         tool_bar.addSpacing(10)
         tool_bar.addWidget(btn_tag)
+        tool_bar.addWidget(btn_img_size) 
         tool_bar.addWidget(btn_aux)
         tool_bar.addStretch()
         
@@ -525,7 +424,7 @@ class MainWindow(QMainWindow):
         self.prompt_table = QTableWidget()
         self.prompt_table.setColumnCount(5)
         self.prompt_table.setHorizontalHeaderLabels(["序号", "选择", "标签", "操作", "内容"])
-        self.prompt_table.verticalHeader().setMinimumSectionSize(45) # 增加行高，更现代
+        self.prompt_table.verticalHeader().setMinimumSectionSize(45) 
         self.prompt_table.setWordWrap(True)
         self.prompt_table.setTextElideMode(Qt.ElideNone)
         self.prompt_table.scrollTo = lambda index, hint=None: None
@@ -552,11 +451,27 @@ class MainWindow(QMainWindow):
         left_panel.setMinimumWidth(600) 
         splitter.addWidget(left_panel)
         splitter.addWidget(right_panel)
-        splitter.setSizes([850, 650])
+        splitter.setSizes([600, 1000])
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
 
     # --- 逻辑功能 ---
+
+    def set_image_size(self):
+        indices = [i for i, x in enumerate(self.combined_plan) if x["checked"]]
+        if not indices:
+            QMessageBox.information(self, "提示", "请先勾选需要设置大小的行")
+            return
+        
+        item, ok = QInputDialog.getItem(
+            self, "选择图像大小", "请选择分辨率 (仅影响导出结果，不显示在列表):", 
+            RESOLUTION_LIST, 0, False
+        )
+        
+        if ok and item:
+            for i in indices:
+                self.combined_plan[i]['image_size'] = item
+            QMessageBox.information(self, "成功", f"已将选中的 {len(indices)} 个 Prompt 设置为 {item}")
 
     def select_dragged_rows(self):
         selected_indexes = self.prompt_table.selectedIndexes()
@@ -718,75 +633,69 @@ class MainWindow(QMainWindow):
         for cat_name in order:
             _, min_c_val = self.parse_config_setting(cat_name)
             
-            # 使用 ObjectName 应用 CardFrame 样式
             frame = QFrame()
             frame.setObjectName("CardFrame")
             
             f_layout = QVBoxLayout(frame)
-            h_layout = QHBoxLayout()
+            f_layout.setSpacing(5) 
+            f_layout.setContentsMargins(10, 10, 10, 10)
+
             lbl = QLabel(cat_name)
-            lbl.setFont(QFont("SimHei", 10, QFont.Bold)) 
-            lbl.setStyleSheet("border: none; color: #303133;" if not self.dark_mode else "border: none; color: #E0E0E0;")
-            lbl.setMinimumWidth(150)
+            lbl.setObjectName("CategoryTitle") 
+            f_layout.addWidget(lbl)
+
+            ctrl_layout = QHBoxLayout()
             
             lbl_c = QLabel("保底类别:")
-            lbl_c.setStyleSheet("border: none; color: #606266;" if not self.dark_mode else "border: none; color: #B0B0B0;")
+            lbl_c.setStyleSheet("color: #606266; font-size: 11px;")
             spin_c = QSpinBox()
             spin_c.setRange(1, 50) 
             spin_c.setValue(min_c_val) 
-            spin_c.setFixedWidth(50) 
+            spin_c.setFixedWidth(45) 
             
             lbl_cur_c = QLabel("(当前: 0类)")
-            lbl_cur_c.setStyleSheet("color: #909399; font-size: 11px; border: none;")
+            lbl_cur_c.setStyleSheet("color: #909399; font-size: 11px;")
             
             lbl_info = QLabel("共 0 张")
-            lbl_info.setStyleSheet("color: #606266; border: none;" if not self.dark_mode else "color: #A0A0A0; border: none;")
-            lbl_info.setFixedWidth(60)
+            lbl_info.setStyleSheet("color: #606266; font-weight: bold;")
             lbl_info.setAlignment(Qt.AlignCenter)
             
+            ctrl_layout.addWidget(lbl_c)
+            ctrl_layout.addWidget(spin_c)
+            ctrl_layout.addWidget(lbl_cur_c)
+            ctrl_layout.addSpacing(10)
+            ctrl_layout.addWidget(lbl_info)
+            ctrl_layout.addStretch()
+            
             btn_sel = QPushButton("≡ 选择")
-            btn_sel.setFixedWidth(60) 
+            btn_sel.setFixedWidth(55) 
             btn_sel.clicked.connect(lambda _, c=cat_name: self.open_manual_selection_window(c))
             
             btn_clear = QPushButton("× 清空")
-            btn_clear.setFixedWidth(60)
-            # 保持清空按钮的特殊红色样式
+            btn_clear.setFixedWidth(55)
             if not self.dark_mode:
                 btn_clear.setStyleSheet("QPushButton { color: #F56C6C; border-color: #fbc4c4; background-color: #fef0f0; } QPushButton:hover { background-color: #F56C6C; color: white; border-color: #F56C6C; }")
             else:
                 btn_clear.setStyleSheet("QPushButton { color: #ff8080; border-color: #703030; background-color: #3a1c1c; } QPushButton:hover { background-color: #703030; color: white; }")
-                
             btn_clear.clicked.connect(lambda _, c=cat_name: self.clear_single_category(c))
 
             btn_re = QPushButton("⟳ 重抽")
-            btn_re.setFixedWidth(60) 
+            btn_re.setFixedWidth(55) 
             btn_re.clicked.connect(lambda _, c=cat_name: self.reset_single_category(c))
 
-            h_layout.addWidget(lbl)
-            h_layout.addStretch()
-            h_layout.addWidget(lbl_c)
-            h_layout.addWidget(spin_c)
-            h_layout.addWidget(lbl_cur_c)
-            h_layout.addSpacing(10)
-            h_layout.addWidget(lbl_info)
-            h_layout.addSpacing(15)
-            h_layout.addWidget(btn_sel)
-            h_layout.addWidget(btn_clear)
-            h_layout.addWidget(btn_re)
-            f_layout.addLayout(h_layout)
+            ctrl_layout.addWidget(btn_sel)
+            ctrl_layout.addWidget(btn_clear)
+            ctrl_layout.addWidget(btn_re)
+            
+            f_layout.addLayout(ctrl_layout)
 
             text_edit = QTextEdit()
             text_edit.setReadOnly(True)  
             text_edit.setCursor(QCursor(Qt.PointingHandCursor)) 
-            # [需求1] 增加高度至100px，让内容展示更完整
             text_edit.setFixedHeight(100) 
-            
-            # [需求1] 移除横向滚动条，开启软换行，增加内边距
             text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             text_edit.setLineWrapMode(QTextEdit.WidgetWidth)
-            # 给内部文字留点呼吸空间
             text_edit.setStyleSheet("padding: 5px;") 
-            
             text_edit.mousePressEvent = lambda event, c=cat_name: self.open_manual_selection_window(c)
             f_layout.addWidget(text_edit)
             
@@ -900,7 +809,12 @@ class MainWindow(QMainWindow):
                     raw_plan.extend([original_code] * count)
         self.combined_plan = []
         for action in raw_plan:
-            self.combined_plan.append({"original_action": action, "translation": self.translation_map.get(action, "无标签"), "checked": False})
+            self.combined_plan.append({
+                "original_action": action, 
+                "translation": self.translation_map.get(action, "无标签"), 
+                "checked": False,
+                "image_size": None 
+            })
         self.refresh_prompt_list()
 
     def refresh_prompt_list(self):
@@ -1049,9 +963,6 @@ class MainWindow(QMainWindow):
 
         all_item_widgets = {} 
 
-        # [需求2] 使用 modern Tag 样式按钮
-        # 已经在全局 QSS 中定义了 #TagButton 样式，这里直接设置 ObjectName
-
         def refresh_button_labels():
             for act_key, widget_pack in all_item_widgets.items():
                 btn_obj = widget_pack["btn"]
@@ -1078,7 +989,7 @@ class MainWindow(QMainWindow):
                 cell_widget = QWidget(); cell_layout = QHBoxLayout(cell_widget); cell_layout.setContentsMargins(0,0,0,0); cell_layout.setSpacing(5)
                 
                 btn = QPushButton(display_text)
-                btn.setObjectName("TagButton") # 应用 Tag 样式
+                btn.setObjectName("TagButton") 
                 btn.setCheckable(True)
                 btn.setCursor(QCursor(Qt.PointingHandCursor))
                 btn.setToolTip(f"原始Prompt: {act_text}")
@@ -1175,22 +1086,16 @@ class MainWindow(QMainWindow):
                         options.append({"sub": sub_cat, "act": act, "trans": t_str})
         return options
 
-    # [需求2] 重构辅助动作选择窗口：美观的网格 Tag 布局
     def open_add_action_window(self):
         if not self.combined_plan: return
         dialog = QDialog(self)
         dialog.setWindowTitle("添加辅助动作与表情")
-        
         screen_geo = QApplication.desktop().screenGeometry()
         dialog.resize(int(screen_geo.width() * 0.8), int(screen_geo.height() * 0.8))
-        
         layout = QVBoxLayout(dialog)
-        
         main_scroll = QScrollArea()
         main_scroll.setWidgetResizable(True)
-        # [需求1] 确保无横向滚动条
         main_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff) 
-        
         container = QWidget()
         grid = QGridLayout(container)
         grid.setContentsMargins(20, 20, 20, 20)
@@ -1199,59 +1104,44 @@ class MainWindow(QMainWindow):
         cols_data = []
         aux_data = self.action_categories.get("辅助动作（S/U/W列）", {})
         for sub, acts in aux_data.items(): cols_data.append((sub, list(acts.keys())))
-        
         emo_acts = self.action_categories.get("表情（Y列）", [])
         
         all_checkboxes = []
         current_idx = 0
         COL_COUNT = 4 
 
-        # --- 辅助动作 ---
         for title, items in cols_data:
             lbl = QLabel(f"【{title}】")
-            # 标题样式优化
-            lbl.setStyleSheet(
-                "font-weight: bold; font-size: 15px; margin-top: 20px; margin-bottom: 10px; " + 
-                ("color: #333;" if not self.dark_mode else "color: #E0E0E0;")
-            )
-            
+            lbl.setStyleSheet("font-weight: bold; font-size: 15px; margin-top: 20px; margin-bottom: 10px; " + 
+                ("color: #333;" if not self.dark_mode else "color: #E0E0E0;"))
             current_row = current_idx // COL_COUNT
             if current_idx % COL_COUNT != 0: 
                 current_row += 1
                 current_idx = current_row * COL_COUNT 
-            
             grid.addWidget(lbl, current_row, 0, 1, COL_COUNT)
             current_idx += COL_COUNT 
-
             for item in items:
                 trans = self.translation_map.get(item, "")
                 cb = TruncatedCheckBox(item, trans)
-                
                 r = current_idx // COL_COUNT
                 c = current_idx % COL_COUNT
                 grid.addWidget(cb, r, c)
                 all_checkboxes.append(cb)
                 current_idx += 1
 
-        # --- 表情 ---
         if emo_acts:
             current_row = current_idx // COL_COUNT
             if current_idx % COL_COUNT != 0: 
                 current_row += 1
                 current_idx = current_row * COL_COUNT 
-
             lbl_emo = QLabel("【表情】")
-            lbl_emo.setStyleSheet(
-                "font-weight: bold; font-size: 15px; margin-top: 20px; margin-bottom: 10px; " + 
-                ("color: #333;" if not self.dark_mode else "color: #E0E0E0;")
-            )
+            lbl_emo.setStyleSheet("font-weight: bold; font-size: 15px; margin-top: 20px; margin-bottom: 10px; " + 
+                ("color: #333;" if not self.dark_mode else "color: #E0E0E0;"))
             grid.addWidget(lbl_emo, current_row, 0, 1, COL_COUNT)
             current_idx += COL_COUNT
-
             for item in emo_acts:
                 trans = self.translation_map.get(item, "")
                 cb = TruncatedCheckBox(item, trans)
-                
                 r = current_idx // COL_COUNT
                 c = current_idx % COL_COUNT
                 grid.addWidget(cb, r, c)
@@ -1259,7 +1149,6 @@ class MainWindow(QMainWindow):
                 current_idx += 1
 
         grid.setRowStretch(grid.rowCount(), 1)
-        
         main_scroll.setWidget(container)
         layout.addWidget(main_scroll)
 
@@ -1277,10 +1166,9 @@ class MainWindow(QMainWindow):
             dialog.accept()
         btn.clicked.connect(apply)
         layout.addWidget(btn)
-        
         dialog.exec_()
 
-    # [需求3] 智能导出路径
+    # --- 修正后的导出功能（支持图像大小列） ---
     def export_excel(self):
         if not self.combined_plan: return
         
@@ -1298,22 +1186,65 @@ class MainWindow(QMainWindow):
                 self.config_data["last_export_dir"] = new_dir
                 self.save_config()
                 
-            try:
-                final = [x["original_action"] for x in self.combined_plan]
-                seeds = [random.randint(10000000000000, 99999999999999) for _ in final]
-                df = pd.DataFrame({
-                    "序号": range(1, len(final)+1),
-                    "动作Prompt": final,
-                    "种子": seeds,
-                    "完成情况": [""] * len(final)
-                })
-                with pd.ExcelWriter(path, engine='openpyxl') as writer:
-                    df.to_excel(writer, index=False, sheet_name='Sheet1')
-                    ws = writer.sheets['Sheet1']
-                    ws.column_dimensions['C'].width = 20
-                    for row in range(2, len(final) + 2): ws.cell(row=row, column=3).number_format = '0'
-                QMessageBox.information(self, "成功", "导出完成")
-            except Exception as e: QMessageBox.critical(self, "错误", f"导出失败: {str(e)}")
+            while True:
+                try:
+                    final = [x["original_action"] for x in self.combined_plan]
+                    seeds = [str(random.randint(10000000000000, 99999999999999)) for _ in final]
+                    
+                    # [修改] 提取图像大小逻辑（保持字符串格式不拆分）
+                    sizes = []
+                    for x in self.combined_plan:
+                        raw_size = x.get('image_size')
+                        if raw_size:
+                            # 提取 "SDXL_1024x960" 后面的 "1024x960"
+                            parts = raw_size.split('_', 1)
+                            if len(parts) > 1:
+                                sizes.append(parts[1])
+                            else:
+                                sizes.append(raw_size)
+                        else:
+                            sizes.append(DEFAULT_RESOLUTION)
+
+                    # [修改] DataFrame 列顺序重排
+                    # 1: 完成情况, 2: 序号, 3: 动作Prompt, 4: 种子, 5: 图像大小
+                    df = pd.DataFrame({
+                        "完成情况": [""] * len(final),
+                        "序号": range(1, len(final)+1),
+                        "动作Prompt": final,
+                        "种子": seeds,
+                        "图像大小": sizes
+                    })
+                    
+                    with pd.ExcelWriter(path, engine='openpyxl') as writer:
+                        df.to_excel(writer, index=False, sheet_name='Sheet1')
+                        ws = writer.sheets['Sheet1']
+                        
+                        # 调整列宽
+                        ws.column_dimensions['A'].width = 15 # 完成情况
+                        ws.column_dimensions['B'].width = 8  # 序号
+                        ws.column_dimensions['C'].width = 50 # Prompt
+                        ws.column_dimensions['D'].width = 25 # 种子
+                        ws.column_dimensions['E'].width = 15 # 图像大小
+                        
+                        # 种子列（第4列）设置文本格式
+                        for row in range(2, len(final) + 2):
+                            cell = ws.cell(row=row, column=4)
+                            cell.number_format = '@' 
+                            
+                    QMessageBox.information(self, "成功", "导出完成")
+                    break 
+
+                except PermissionError:
+                    reply = QMessageBox.question(
+                        self, "文件被占用", 
+                        f"无法写入文件:\n{path}\n\n该文件可能正在被打开(WPS/Excel/ComfyUI)。\n请关闭该文件后点击【Yes】重试，或点击【No】取消。",
+                        QMessageBox.Yes | QMessageBox.No
+                    )
+                    if reply == QMessageBox.No: break
+                except Exception as e:
+                    traceback.print_exc()
+                    QMessageBox.critical(self, "错误", f"导出失败: {str(e)}")
+                    break
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
